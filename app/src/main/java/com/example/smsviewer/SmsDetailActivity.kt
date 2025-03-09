@@ -1,15 +1,25 @@
 package com.example.smsviewer
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import java.text.SimpleDateFormat
 import java.util.*
 
 class SmsDetailActivity : AppCompatActivity() {
+    private lateinit var messageTextView: TextView
+    private lateinit var senderTextView: TextView
+    private var messageBody: String = ""
+    private var sender: String = ""
+
     companion object {
         private const val EXTRA_SMS_ID = "extra_sms_id"
         private const val EXTRA_SMS_ADDRESS = "extra_sms_address"
@@ -35,17 +45,35 @@ class SmsDetailActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { onBackPressed() }
 
-        val senderTextView: TextView = findViewById(R.id.detailSenderTextView)
-        val messageTextView: TextView = findViewById(R.id.detailMessageTextView)
+        senderTextView = findViewById(R.id.detailSenderTextView)
+        messageTextView = findViewById(R.id.detailMessageTextView)
         val dateTextView: TextView = findViewById(R.id.detailDateTextView)
 
-        val address = intent.getStringExtra(EXTRA_SMS_ADDRESS) ?: "Unknown"
-        val body = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
+        sender = intent.getStringExtra(EXTRA_SMS_ADDRESS) ?: "Unknown"
+        messageBody = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
         val date = intent.getLongExtra(EXTRA_SMS_DATE, 0L)
 
-        senderTextView.text = address
-        messageTextView.text = body
+        senderTextView.text = sender
+        messageTextView.text = messageBody
         dateTextView.text = formatDate(date)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_copy -> {
+                copyMessageToClipboard()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun copyMessageToClipboard() {
+        val fullMessage = "From: $sender\nMessage: $messageBody"
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val clip = ClipData.newPlainText("SMS Message", fullMessage)
+        clipboard.setPrimaryClip(clip)
+        Toast.makeText(this, "Message copied to clipboard", Toast.LENGTH_SHORT).show()
     }
 
     private fun formatDate(timestamp: Long): String {

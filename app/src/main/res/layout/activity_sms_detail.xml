@@ -15,7 +15,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:title="Message Details"
-            app:titleTextColor="@android:color/white"/>
+            app:titleTextColor="@android:color/white"
+            app:menu="@menu/detail_menu"/>
 
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -51,7 +52,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="18sp"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:textIsSelectable="true"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -67,7 +69,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textSize="16sp"/>
+                    android:textSize="16sp"
+                    android:textIsSelectable="true"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -83,7 +86,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textSize="14sp"/>
+                    android:textSize="14sp"
+                    android:textIsSelectable="true"/>
 
             </LinearLayout>
 
