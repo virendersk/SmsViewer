@@ -16,17 +16,20 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 
 class MainActivity : AppCompatActivity() {
     private lateinit var smsRecyclerView: RecyclerView
     private lateinit var searchEditText: TextInputEditText
+    private lateinit var composeFab: FloatingActionButton
     private val smsAdapter = SmsAdapter { message ->
         startActivity(SmsDetailActivity.createIntent(this, message))
     }
 
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_SMS,
+        Manifest.permission.SEND_SMS,
         Manifest.permission.READ_CONTACTS
     )
 
@@ -37,9 +40,11 @@ class MainActivity : AppCompatActivity() {
 
         smsRecyclerView = findViewById(R.id.smsRecyclerView)
         searchEditText = findViewById(R.id.searchEditText)
+        composeFab = findViewById(R.id.composeFab)
 
         setupRecyclerView()
         setupSearch()
+        setupComposeFab()
         requestPermissions()
     }
 
@@ -58,6 +63,12 @@ class MainActivity : AppCompatActivity() {
                 smsAdapter.filter(s?.toString() ?: "")
             }
         })
+    }
+
+    private fun setupComposeFab() {
+        composeFab.setOnClickListener {
+            startActivity(ComposeActivity.createIntent(this))
+        }
     }
 
     private fun requestPermissions() {

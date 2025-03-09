@@ -71,6 +71,10 @@ class SmsDetailActivity : AppCompatActivity() {
                 copyMessageToClipboard()
                 true
             }
+            R.id.action_reply -> {
+                startActivity(ComposeActivity.createIntent(this, sender, contactName))
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
