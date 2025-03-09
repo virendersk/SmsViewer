@@ -1,0 +1,64 @@
+### General ###
+*.iml
+.idea/
+.gradle/
+local.properties
+*.log
+*.keystore
+*.jks
+captures/
+output.json
+
+### Android ###
+/build/
+/app/build/
+/captures/
+/generated/
+/gradle/wrapper/gradle-wrapper.jar
+gradle.properties
+gradlew
+gradlew.bat
+settings.gradle
+
+### macOS ###
+.DS_Store
+
+### IntelliJ / Android Studio ###
+/.idea/
+*.iws
+*.ipr
+*.idx
+*.pyc
+*.swp
+*.swo
+*.swn
+*.class
+
+### VSCode ###
+.vscode/
+
+### Dependency caches ###
+/.gradle/
+/build/
+.cxx/
+.externalNativeBuild/
+
+### Firebase ###
+android/app/google-services.json
+android/app/google-services.plist
+
+### NDK / JNI ###
+*.so
+*.obj
+*.o
+*.a
+
+### Miscellaneous ###
+*.lock
+*.tflite
+*.hprof
+*.log
+
+### Ignore test reports ###
+/test-results/
+/outputs/
