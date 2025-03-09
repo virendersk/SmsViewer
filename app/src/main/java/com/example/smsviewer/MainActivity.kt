@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
         setupSearch()
         setupComposeFab()
         requestPermissions()
+        checkDefaultSmsApp()
 
         // Register SMS receiver using LocalBroadcastManager
         LocalBroadcastManager.getInstance(this)
@@ -174,6 +175,15 @@ class MainActivity : AppCompatActivity() {
             if (cursor.moveToFirst()) {
                 cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME))
             } else null
+        }
+    }
+
+    private fun checkDefaultSmsApp() {
+        if (Telephony.Sms.getDefaultSmsPackage(this) != packageName) {
+            // This app is not the default SMS app
+            val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+            intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
+            startActivity(intent)
         }
     }
 }

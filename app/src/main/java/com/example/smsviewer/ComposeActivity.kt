@@ -85,7 +85,8 @@ class ComposeActivity : AppCompatActivity() {
         recipientEditText.setOnItemClickListener { _, _, position, _ ->
             val contact = adapter.getItem(position) as Contact
             selectedContact = contact
-            recipientEditText.setText(contact.number)
+            recipientEditText.setText(contact.displayString)
+            recipientEditText.setSelection(recipientEditText.text?.length ?: 0)
         }
     }
 
@@ -104,12 +105,19 @@ class ComposeActivity : AppCompatActivity() {
         }
 
         try {
+            // Extract just the number if it's a display string format
+            val phoneNumber = if (recipient.contains("(") && recipient.contains(")")) {
+                recipient.substringAfter("(").substringBefore(")")
+            } else {
+                recipient
+            }
+
             val smsManager = SmsManager.getDefault()
-            smsManager.sendTextMessage(recipient, null, message, null, null)
+            smsManager.sendTextMessage(phoneNumber.trim(), null, message, null, null)
             
             // Store the sent message
             val values = ContentValues().apply {
-                put(Telephony.Sms.ADDRESS, recipient)
+                put(Telephony.Sms.ADDRESS, phoneNumber.trim())
                 put(Telephony.Sms.BODY, message)
                 put(Telephony.Sms.DATE, System.currentTimeMillis())
                 put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
