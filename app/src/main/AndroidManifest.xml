@@ -77,6 +77,15 @@
             </intent-filter>
         </receiver>
 
+        <receiver
+            android:name=".DeliveryReportReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_DELIVERED" />
+            </intent-filter>
+        </receiver>
+
         <!-- Default SMS app components -->
         <receiver
             android:name=".MmsReceiver"

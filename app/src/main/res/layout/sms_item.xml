@@ -32,10 +32,11 @@
 
             <ImageView
                 android:id="@+id/deliveryStatusView"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
                 android:layout_marginStart="8dp"
-                android:visibility="gone"/>
+                android:scaleType="fitCenter"
+                android:visibility="visible"/>
         </LinearLayout>
 
         <TextView

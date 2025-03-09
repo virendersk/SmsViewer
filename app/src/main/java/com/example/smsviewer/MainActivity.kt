@@ -172,6 +172,8 @@ class MainActivity : AppCompatActivity() {
                 } else 0
                 val contactName = getContactName(address)
                 
+                android.util.Log.d("SmsViewer", "Loading message: isSent=$isSent, status=$status, address=$address")
+                
                 messages.add(SmsMessage(
                     id = id,
                     address = address,

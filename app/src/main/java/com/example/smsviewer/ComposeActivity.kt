@@ -1,5 +1,6 @@
 package com.example.smsviewer
 
+import android.app.PendingIntent
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -31,6 +32,7 @@ class ComposeActivity : AppCompatActivity() {
     companion object {
         private const val EXTRA_RECIPIENT = "extra_recipient"
         private const val EXTRA_RECIPIENT_NAME = "extra_recipient_name"
+        private const val DELIVERED_ACTION = "android.provider.Telephony.SMS_DELIVERED"
 
         fun createIntent(context: Context, recipient: String? = null, recipientName: String? = null): Intent {
             return Intent(context, ComposeActivity::class.java).apply {
@@ -112,17 +114,46 @@ class ComposeActivity : AppCompatActivity() {
                 recipient
             }
 
-            val smsManager = SmsManager.getDefault()
-            smsManager.sendTextMessage(phoneNumber.trim(), null, message, null, null)
-            
-            // Store the sent message
+            // Store the message first to get its ID
             val values = ContentValues().apply {
                 put(Telephony.Sms.ADDRESS, phoneNumber.trim())
                 put(Telephony.Sms.BODY, message)
                 put(Telephony.Sms.DATE, System.currentTimeMillis())
                 put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+                put(Telephony.Sms.STATUS, Telephony.Sms.STATUS_PENDING)
             }
-            contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, values)
+            
+            val messageUri = contentResolver.insert(Telephony.Sms.CONTENT_URI, values)
+            val messageId = messageUri?.lastPathSegment?.toLongOrNull() ?: -1
+
+            // Create pending intents for delivery reports
+            val deliveryIntent = Intent(DELIVERED_ACTION).apply {
+                putExtra("message_id", messageId)
+            }
+            val deliveryPI = PendingIntent.getBroadcast(
+                this, messageId.toInt(),
+                deliveryIntent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Send the message with delivery report request
+            val smsManager = SmsManager.getDefault()
+            val messages = smsManager.divideMessage(message)
+            
+            if (messages.size > 1) {
+                val deliveryIntents = ArrayList<PendingIntent>()
+                for (i in messages.indices) {
+                    deliveryIntents.add(deliveryPI)
+                }
+                smsManager.sendMultipartTextMessage(
+                    phoneNumber.trim(), null, messages,
+                    null, deliveryIntents
+                )
+            } else {
+                smsManager.sendTextMessage(
+                    phoneNumber.trim(), null, message,
+                    null, deliveryPI
+                )
+            }
 
             Toast.makeText(this, "Message sent", Toast.LENGTH_SHORT).show()
             finish()

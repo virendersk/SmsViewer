@@ -1,5 +1,6 @@
 package com.example.smsviewer
 
+import android.provider.Telephony
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -63,32 +64,35 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         holder.messageTextView.text = message.body
         holder.dateTextView.text = formatDate(message.date)
         
+        // Set default visibility to GONE
+        holder.deliveryStatusView.visibility = View.GONE
+        
         // Style sent messages differently and show delivery status
         if (message.isSent) {
             holder.cardView.setBackgroundColor(ContextCompat.getColor(context, R.color.sent_message_bg))
             holder.senderTextView.setTextColor(ContextCompat.getColor(context, R.color.sent_message_text))
             
             // Show delivery status icon for sent messages
-            holder.deliveryStatusView.visibility = View.VISIBLE
             when (message.deliveryStatus) {
                 SmsMessage.STATUS_COMPLETE -> {
                     holder.deliveryStatusView.setImageResource(R.drawable.ic_delivered)
                     holder.deliveryStatusView.contentDescription = "Message delivered"
+                    holder.deliveryStatusView.visibility = View.VISIBLE
                 }
                 SmsMessage.STATUS_PENDING -> {
                     holder.deliveryStatusView.setImageResource(R.drawable.ic_pending)
                     holder.deliveryStatusView.contentDescription = "Delivery pending"
+                    holder.deliveryStatusView.visibility = View.VISIBLE
                 }
                 SmsMessage.STATUS_FAILED -> {
                     holder.deliveryStatusView.setImageResource(R.drawable.ic_failed)
                     holder.deliveryStatusView.contentDescription = "Delivery failed"
+                    holder.deliveryStatusView.visibility = View.VISIBLE
                 }
-                else -> holder.deliveryStatusView.visibility = View.GONE
             }
         } else {
             holder.cardView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
             holder.senderTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
-            holder.deliveryStatusView.visibility = View.GONE
         }
         
         holder.itemView.setOnClickListener {
