@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -18,10 +19,14 @@ class SmsDetailActivity : AppCompatActivity() {
     private lateinit var messageTextView: TextView
     private lateinit var senderTextView: TextView
     private lateinit var recipientLabelTextView: TextView
+    private lateinit var dateTextView: TextView
+    private lateinit var deliveryStatusTextView: TextView
     private var messageBody: String = ""
     private var sender: String = ""
     private var contactName: String? = null
     private var isSent: Boolean = false
+    private var deliveryStatus: Int = 0
+    private var deliveredDate: Long = 0
 
     companion object {
         private const val EXTRA_SMS_ID = "extra_sms_id"
@@ -30,6 +35,8 @@ class SmsDetailActivity : AppCompatActivity() {
         private const val EXTRA_SMS_BODY = "extra_sms_body"
         private const val EXTRA_SMS_DATE = "extra_sms_date"
         private const val EXTRA_SMS_IS_SENT = "extra_sms_is_sent"
+        private const val EXTRA_SMS_DELIVERY_STATUS = "extra_sms_delivery_status"
+        private const val EXTRA_SMS_DELIVERED_DATE = "extra_sms_delivered_date"
 
         fun createIntent(context: Context, message: SmsMessage): Intent {
             return Intent(context, SmsDetailActivity::class.java).apply {
@@ -39,6 +46,8 @@ class SmsDetailActivity : AppCompatActivity() {
                 putExtra(EXTRA_SMS_BODY, message.body)
                 putExtra(EXTRA_SMS_DATE, message.date)
                 putExtra(EXTRA_SMS_IS_SENT, message.isSent)
+                putExtra(EXTRA_SMS_DELIVERY_STATUS, message.deliveryStatus)
+                putExtra(EXTRA_SMS_DELIVERED_DATE, message.deliveredDate)
             }
         }
     }
@@ -55,13 +64,16 @@ class SmsDetailActivity : AppCompatActivity() {
         recipientLabelTextView = findViewById(R.id.recipientLabelTextView)
         senderTextView = findViewById(R.id.detailSenderTextView)
         messageTextView = findViewById(R.id.detailMessageTextView)
-        val dateTextView: TextView = findViewById(R.id.detailDateTextView)
+        dateTextView = findViewById(R.id.detailDateTextView)
+        deliveryStatusTextView = findViewById(R.id.deliveryStatusTextView)
 
         sender = intent.getStringExtra(EXTRA_SMS_ADDRESS) ?: "Unknown"
         contactName = intent.getStringExtra(EXTRA_SMS_CONTACT_NAME)
         messageBody = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
         val date = intent.getLongExtra(EXTRA_SMS_DATE, 0L)
         isSent = intent.getBooleanExtra(EXTRA_SMS_IS_SENT, false)
+        deliveryStatus = intent.getIntExtra(EXTRA_SMS_DELIVERY_STATUS, 0)
+        deliveredDate = intent.getLongExtra(EXTRA_SMS_DELIVERED_DATE, 0L)
 
         // Set the appropriate label and title based on message type
         recipientLabelTextView.text = if (isSent) "To" else "From"
@@ -72,6 +84,29 @@ class SmsDetailActivity : AppCompatActivity() {
         }
         messageTextView.text = messageBody
         dateTextView.text = formatDate(date)
+
+        // Show delivery status for sent messages
+        if (isSent) {
+            deliveryStatusTextView.visibility = View.VISIBLE
+            val statusText = when (deliveryStatus) {
+                SmsMessage.STATUS_COMPLETE -> {
+                    val deliveredTime = if (deliveredDate > 0) {
+                        "\nDelivered: ${formatDate(deliveredDate)}"
+                    } else ""
+                    "✓ Delivered$deliveredTime"
+                }
+                SmsMessage.STATUS_PENDING -> "⏳ Pending"
+                SmsMessage.STATUS_FAILED -> "❌ Failed to deliver"
+                else -> null
+            }
+            if (statusText != null) {
+                deliveryStatusTextView.text = statusText
+            } else {
+                deliveryStatusTextView.visibility = View.GONE
+            }
+        } else {
+            deliveryStatusTextView.visibility = View.GONE
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

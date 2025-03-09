@@ -3,6 +3,7 @@ package com.example.smsviewer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -15,13 +16,25 @@ data class SmsMessage(
     val contactName: String?,
     val body: String,
     val date: Long,
-    val isSent: Boolean = false
+    val isSent: Boolean = false,
+    val deliveryStatus: Int = 0,
+    val deliveredDate: Long = 0
 ) {
     val displayName: String
         get() = contactName ?: address
 
     val displayLabel: String
         get() = if (isSent) "To: $displayName" else "From: $displayName"
+
+    val isDelivered: Boolean
+        get() = deliveryStatus == Telephony.Sms.STATUS_COMPLETE
+
+    companion object {
+        const val STATUS_NONE = 0
+        const val STATUS_COMPLETE = Telephony.Sms.STATUS_COMPLETE
+        const val STATUS_PENDING = Telephony.Sms.STATUS_PENDING
+        const val STATUS_FAILED = Telephony.Sms.STATUS_FAILED
+    }
 }
 
 class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.Adapter<SmsAdapter.SmsViewHolder>() {
@@ -33,6 +46,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         val messageTextView: TextView = view.findViewById(R.id.messageTextView)
         val dateTextView: TextView = view.findViewById(R.id.dateTextView)
         val cardView: View = view.findViewById(R.id.messageCard)
+        val deliveryStatusView: ImageView = view.findViewById(R.id.deliveryStatusView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmsViewHolder {
@@ -49,13 +63,32 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         holder.messageTextView.text = message.body
         holder.dateTextView.text = formatDate(message.date)
         
-        // Style sent messages differently
+        // Style sent messages differently and show delivery status
         if (message.isSent) {
             holder.cardView.setBackgroundColor(ContextCompat.getColor(context, R.color.sent_message_bg))
             holder.senderTextView.setTextColor(ContextCompat.getColor(context, R.color.sent_message_text))
+            
+            // Show delivery status icon for sent messages
+            holder.deliveryStatusView.visibility = View.VISIBLE
+            when (message.deliveryStatus) {
+                SmsMessage.STATUS_COMPLETE -> {
+                    holder.deliveryStatusView.setImageResource(R.drawable.ic_delivered)
+                    holder.deliveryStatusView.contentDescription = "Message delivered"
+                }
+                SmsMessage.STATUS_PENDING -> {
+                    holder.deliveryStatusView.setImageResource(R.drawable.ic_pending)
+                    holder.deliveryStatusView.contentDescription = "Delivery pending"
+                }
+                SmsMessage.STATUS_FAILED -> {
+                    holder.deliveryStatusView.setImageResource(R.drawable.ic_failed)
+                    holder.deliveryStatusView.contentDescription = "Delivery failed"
+                }
+                else -> holder.deliveryStatusView.visibility = View.GONE
+            }
         } else {
             holder.cardView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
             holder.senderTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            holder.deliveryStatusView.visibility = View.GONE
         }
         
         holder.itemView.setOnClickListener {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <!-- Background Circle -->
+    <path
+        android:fillColor="@color/purple_500"
+        android:pathData="M24,24m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0"/>
+    <!-- Message Icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,4L8,4C5.8,4 4.02,5.8 4.02,8L4,44l8,-8h28c2.2,0 4,-1.8 4,-4L44,8c0,-2.2 -1.8,-4 -4,-4zM36,28L12,28v-4h24v4zM36,22L12,22v-4h24v4zM36,16L12,16v-4h24v4z"/>
+</vector> 

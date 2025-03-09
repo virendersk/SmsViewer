@@ -45,7 +45,8 @@ class MainActivity : AppCompatActivity() {
         Manifest.permission.READ_SMS,
         Manifest.permission.SEND_SMS,
         Manifest.permission.READ_CONTACTS,
-        Manifest.permission.RECEIVE_SMS
+        Manifest.permission.RECEIVE_SMS,
+        Manifest.permission.POST_NOTIFICATIONS
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +62,11 @@ class MainActivity : AppCompatActivity() {
         setupSearch()
         setupComposeFab()
         requestPermissions()
-        checkDefaultSmsApp()
+        
+        // For Android 14 and above, check if we're the default SMS app first
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            checkDefaultSmsApp()
+        }
 
         // Register SMS receiver using LocalBroadcastManager
         LocalBroadcastManager.getInstance(this)
@@ -148,7 +153,9 @@ class MainActivity : AppCompatActivity() {
             Telephony.Sms._ID,
             Telephony.Sms.ADDRESS,
             Telephony.Sms.BODY,
-            Telephony.Sms.DATE
+            Telephony.Sms.DATE,
+            Telephony.Sms.STATUS,
+            Telephony.Sms.DATE_SENT
         )
 
         contentResolver.query(uri, projection, null, null, "${Telephony.Sms.DATE} DESC")?.use { cursor ->
@@ -157,9 +164,24 @@ class MainActivity : AppCompatActivity() {
                 val address = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
                 val body = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY))
                 val date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Sms.DATE))
+                val status = if (isSent) {
+                    cursor.getInt(cursor.getColumnIndexOrThrow(Telephony.Sms.STATUS))
+                } else 0
+                val dateSent = if (isSent) {
+                    cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Sms.DATE_SENT))
+                } else 0
                 val contactName = getContactName(address)
                 
-                messages.add(SmsMessage(id, address, contactName, body, date, isSent))
+                messages.add(SmsMessage(
+                    id = id,
+                    address = address,
+                    contactName = contactName,
+                    body = body,
+                    date = date,
+                    isSent = isSent,
+                    deliveryStatus = status,
+                    deliveredDate = dateSent
+                ))
             }
         }
     }
@@ -181,9 +203,22 @@ class MainActivity : AppCompatActivity() {
     private fun checkDefaultSmsApp() {
         if (Telephony.Sms.getDefaultSmsPackage(this) != packageName) {
             // This app is not the default SMS app
-            val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
-            intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
-            startActivity(intent)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                // For Android 14 and above, use the new role manager
+                val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+                if (roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_SMS) &&
+                    !roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)) {
+                    startActivityForResult(
+                        roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_SMS),
+                        1001
+                    )
+                }
+            } else {
+                // For older versions
+                val intent = Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT)
+                intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, packageName)
+                startActivity(intent)
+            }
         }
     }
 }

@@ -38,22 +38,44 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
-                    android:id="@+id/recipientLabelTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textStyle="bold"
-                    android:textColor="@color/purple_500"
-                    android:textSize="14sp"/>
-
-                <TextView
-                    android:id="@+id/detailSenderTextView"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textIsSelectable="true"/>
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/recipientLabelTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textStyle="bold"
+                        android:textColor="@color/purple_500"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:id="@+id/detailSenderTextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textIsSelectable="true"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/detailDateTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="@android:color/darker_gray"/>
+
+                <TextView
+                    android:id="@+id/deliveryStatusTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:textColor="@android:color/darker_gray"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -70,23 +92,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
                     android:textSize="16sp"
-                    android:textIsSelectable="true"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="Time"
-                    android:textStyle="bold"
-                    android:textColor="@color/purple_500"
-                    android:textSize="14sp"/>
-
-                <TextView
-                    android:id="@+id/detailDateTextView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:textSize="14sp"
                     android:textIsSelectable="true"/>
 
             </LinearLayout>

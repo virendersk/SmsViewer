@@ -8,7 +8,10 @@ import android.util.Log
 
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (intent?.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
+        if (intent?.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION &&
+            intent?.action != Telephony.Sms.Intents.SMS_DELIVER_ACTION) {
+            return
+        }
 
         try {
             // Notify MainActivity to refresh
