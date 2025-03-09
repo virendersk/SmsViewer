@@ -19,10 +19,12 @@ class SmsDetailActivity : AppCompatActivity() {
     private lateinit var senderTextView: TextView
     private var messageBody: String = ""
     private var sender: String = ""
+    private var contactName: String? = null
 
     companion object {
         private const val EXTRA_SMS_ID = "extra_sms_id"
         private const val EXTRA_SMS_ADDRESS = "extra_sms_address"
+        private const val EXTRA_SMS_CONTACT_NAME = "extra_sms_contact_name"
         private const val EXTRA_SMS_BODY = "extra_sms_body"
         private const val EXTRA_SMS_DATE = "extra_sms_date"
 
@@ -30,6 +32,7 @@ class SmsDetailActivity : AppCompatActivity() {
             return Intent(context, SmsDetailActivity::class.java).apply {
                 putExtra(EXTRA_SMS_ID, message.id)
                 putExtra(EXTRA_SMS_ADDRESS, message.address)
+                putExtra(EXTRA_SMS_CONTACT_NAME, message.contactName)
                 putExtra(EXTRA_SMS_BODY, message.body)
                 putExtra(EXTRA_SMS_DATE, message.date)
             }
@@ -50,10 +53,14 @@ class SmsDetailActivity : AppCompatActivity() {
         val dateTextView: TextView = findViewById(R.id.detailDateTextView)
 
         sender = intent.getStringExtra(EXTRA_SMS_ADDRESS) ?: "Unknown"
+        contactName = intent.getStringExtra(EXTRA_SMS_CONTACT_NAME)
         messageBody = intent.getStringExtra(EXTRA_SMS_BODY) ?: ""
         val date = intent.getLongExtra(EXTRA_SMS_DATE, 0L)
 
-        senderTextView.text = sender
+        senderTextView.text = contactName ?: sender
+        if (contactName != null) {
+            supportActionBar?.title = contactName
+        }
         messageTextView.text = messageBody
         dateTextView.text = formatDate(date)
     }
@@ -69,7 +76,8 @@ class SmsDetailActivity : AppCompatActivity() {
     }
 
     private fun copyMessageToClipboard() {
-        val fullMessage = "From: $sender\nMessage: $messageBody"
+        val displayName = contactName ?: sender
+        val fullMessage = "From: $displayName\nPhone: $sender\nMessage: $messageBody"
         val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText("SMS Message", fullMessage)
         clipboard.setPrimaryClip(clip)

@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.Toast
@@ -24,6 +25,11 @@ class MainActivity : AppCompatActivity() {
         startActivity(SmsDetailActivity.createIntent(this, message))
     }
 
+    private val requiredPermissions = arrayOf(
+        Manifest.permission.READ_SMS,
+        Manifest.permission.READ_CONTACTS
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         setupRecyclerView()
         setupSearch()
-        requestSmsPermission()
+        requestPermissions()
     }
 
     private fun setupRecyclerView() {
@@ -54,27 +60,24 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun requestSmsPermission() {
-        val permission = Manifest.permission.READ_SMS
-        when {
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
-                loadSmsInbox()
-            }
-            ActivityCompat.shouldShowRequestPermissionRationale(this, permission) -> {
-                Toast.makeText(this, "Permission needed to read SMS", Toast.LENGTH_LONG).show()
-            }
-            else -> {
-                requestPermissionLauncher.launch(permission)
-            }
+    private fun requestPermissions() {
+        val permissionsToRequest = requiredPermissions.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isEmpty()) {
+            loadSmsInbox()
+        } else {
+            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
     }
 
     private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
-            if (isGranted) {
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+            if (permissions.all { it.value }) {
                 loadSmsInbox()
             } else {
-                Toast.makeText(this, "Permission denied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Permissions needed to display messages", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -90,12 +93,27 @@ class MainActivity : AppCompatActivity() {
                 val address = cursor.getString(cursor.getColumnIndexOrThrow("address"))
                 val body = cursor.getString(cursor.getColumnIndexOrThrow("body"))
                 val date = cursor.getLong(cursor.getColumnIndexOrThrow("date"))
+                val contactName = getContactName(address)
                 
-                messages.add(SmsMessage(id, address, body, date))
+                messages.add(SmsMessage(id, address, contactName, body, date))
             }
             smsAdapter.setMessages(messages)
         } ?: run {
             Toast.makeText(this, "No SMS messages found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun getContactName(phoneNumber: String): String? {
+        val uri = Uri.withAppendedPath(
+            ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
+            Uri.encode(phoneNumber)
+        )
+        val projection = arrayOf(ContactsContract.PhoneLookup.DISPLAY_NAME)
+        
+        return contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                cursor.getString(cursor.getColumnIndexOrThrow(ContactsContract.PhoneLookup.DISPLAY_NAME))
+            } else null
         }
     }
 }

@@ -11,9 +11,13 @@ import java.util.*
 data class SmsMessage(
     val id: Long,
     val address: String,
+    val contactName: String?,
     val body: String,
     val date: Long
-)
+) {
+    val displayName: String
+        get() = contactName ?: address
+}
 
 class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.Adapter<SmsAdapter.SmsViewHolder>() {
     private var messages = listOf<SmsMessage>()
@@ -33,7 +37,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
 
     override fun onBindViewHolder(holder: SmsViewHolder, position: Int) {
         val message = filteredMessages[position]
-        holder.senderTextView.text = message.address
+        holder.senderTextView.text = message.displayName
         holder.messageTextView.text = message.body
         holder.dateTextView.text = formatDate(message.date)
         
@@ -55,7 +59,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
             messages
         } else {
             messages.filter {
-                it.address.contains(query, ignoreCase = true) ||
+                it.displayName.contains(query, ignoreCase = true) ||
                 it.body.contains(query, ignoreCase = true)
             }
         }
