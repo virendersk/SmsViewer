@@ -39,9 +39,9 @@
                 android:padding="16dp">
 
                 <TextView
+                    android:id="@+id/recipientLabelTextView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="From"
                     android:textStyle="bold"
                     android:textColor="@color/purple_500"
                     android:textSize="14sp"/>
@@ -76,7 +76,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="Received"
+                    android:text="Time"
                     android:textStyle="bold"
                     android:textColor="@color/purple_500"
                     android:textSize="14sp"/>

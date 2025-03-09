@@ -1,8 +1,10 @@
 package com.example.smsviewer
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Telephony
 import android.telephony.SmsManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -71,6 +73,16 @@ class ComposeActivity : AppCompatActivity() {
         try {
             val smsManager = SmsManager.getDefault()
             smsManager.sendTextMessage(recipient, null, message, null, null)
+            
+            // Store the sent message
+            val values = ContentValues().apply {
+                put(Telephony.Sms.ADDRESS, recipient)
+                put(Telephony.Sms.BODY, message)
+                put(Telephony.Sms.DATE, System.currentTimeMillis())
+                put(Telephony.Sms.TYPE, Telephony.Sms.MESSAGE_TYPE_SENT)
+            }
+            contentResolver.insert(Telephony.Sms.Sent.CONTENT_URI, values)
+
             Toast.makeText(this, "Message sent", Toast.LENGTH_SHORT).show()
             finish()
         } catch (e: Exception) {

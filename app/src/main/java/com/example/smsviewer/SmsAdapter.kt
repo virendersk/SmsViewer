@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
@@ -13,10 +14,14 @@ data class SmsMessage(
     val address: String,
     val contactName: String?,
     val body: String,
-    val date: Long
+    val date: Long,
+    val isSent: Boolean = false
 ) {
     val displayName: String
         get() = contactName ?: address
+
+    val displayLabel: String
+        get() = if (isSent) "To: $displayName" else "From: $displayName"
 }
 
 class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.Adapter<SmsAdapter.SmsViewHolder>() {
@@ -27,6 +32,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         val senderTextView: TextView = view.findViewById(R.id.senderTextView)
         val messageTextView: TextView = view.findViewById(R.id.messageTextView)
         val dateTextView: TextView = view.findViewById(R.id.dateTextView)
+        val cardView: View = view.findViewById(R.id.messageCard)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmsViewHolder {
@@ -37,9 +43,20 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
 
     override fun onBindViewHolder(holder: SmsViewHolder, position: Int) {
         val message = filteredMessages[position]
-        holder.senderTextView.text = message.displayName
+        val context = holder.itemView.context
+
+        holder.senderTextView.text = message.displayLabel
         holder.messageTextView.text = message.body
         holder.dateTextView.text = formatDate(message.date)
+        
+        // Style sent messages differently
+        if (message.isSent) {
+            holder.cardView.setBackgroundColor(ContextCompat.getColor(context, R.color.sent_message_bg))
+            holder.senderTextView.setTextColor(ContextCompat.getColor(context, R.color.sent_message_text))
+        } else {
+            holder.cardView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
+            holder.senderTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+        }
         
         holder.itemView.setOnClickListener {
             onItemClick(message)

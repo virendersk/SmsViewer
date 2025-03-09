@@ -1,11 +1,16 @@
 package com.example.smsviewer
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Telephony
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.Toast
@@ -14,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -27,10 +33,19 @@ class MainActivity : AppCompatActivity() {
         startActivity(SmsDetailActivity.createIntent(this, message))
     }
 
+    private val smsReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == SmsReceiver.ACTION_SMS_RECEIVED) {
+                loadAllMessages()
+            }
+        }
+    }
+
     private val requiredPermissions = arrayOf(
         Manifest.permission.READ_SMS,
         Manifest.permission.SEND_SMS,
-        Manifest.permission.READ_CONTACTS
+        Manifest.permission.READ_CONTACTS,
+        Manifest.permission.RECEIVE_SMS
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +61,28 @@ class MainActivity : AppCompatActivity() {
         setupSearch()
         setupComposeFab()
         requestPermissions()
+
+        // Register SMS receiver using LocalBroadcastManager
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(smsReceiver, IntentFilter(SmsReceiver.ACTION_SMS_RECEIVED))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(smsReceiver)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (hasRequiredPermissions()) {
+            loadAllMessages()
+        }
+    }
+
+    private fun hasRequiredPermissions(): Boolean {
+        return requiredPermissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
     }
 
     private fun setupRecyclerView() {
@@ -77,7 +114,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (permissionsToRequest.isEmpty()) {
-            loadSmsInbox()
+            loadAllMessages()
         } else {
             requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
         }
@@ -86,31 +123,43 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             if (permissions.all { it.value }) {
-                loadSmsInbox()
+                loadAllMessages()
             } else {
                 Toast.makeText(this, "Permissions needed to display messages", Toast.LENGTH_LONG).show()
             }
         }
 
-    private fun loadSmsInbox() {
-        val uri: Uri = Uri.parse("content://sms/inbox")
-        val projection = arrayOf("_id", "address", "body", "date")
+    private fun loadAllMessages() {
+        val messages = mutableListOf<SmsMessage>()
+        
+        // Load inbox messages
+        loadMessages(Telephony.Sms.Inbox.CONTENT_URI, false, messages)
+        // Load sent messages
+        loadMessages(Telephony.Sms.Sent.CONTENT_URI, true, messages)
 
-        val cursor: Cursor? = contentResolver.query(uri, projection, null, null, "date DESC")
-        cursor?.use { 
-            val messages = mutableListOf<SmsMessage>()
+        // Sort all messages by date
+        messages.sortByDescending { it.date }
+        smsAdapter.setMessages(messages)
+    }
+
+    private fun loadMessages(uri: Uri, isSent: Boolean, messages: MutableList<SmsMessage>) {
+        val projection = arrayOf(
+            Telephony.Sms._ID,
+            Telephony.Sms.ADDRESS,
+            Telephony.Sms.BODY,
+            Telephony.Sms.DATE
+        )
+
+        contentResolver.query(uri, projection, null, null, "${Telephony.Sms.DATE} DESC")?.use { cursor ->
             while (cursor.moveToNext()) {
-                val id = cursor.getLong(cursor.getColumnIndexOrThrow("_id"))
-                val address = cursor.getString(cursor.getColumnIndexOrThrow("address"))
-                val body = cursor.getString(cursor.getColumnIndexOrThrow("body"))
-                val date = cursor.getLong(cursor.getColumnIndexOrThrow("date"))
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Sms._ID))
+                val address = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))
+                val body = cursor.getString(cursor.getColumnIndexOrThrow(Telephony.Sms.BODY))
+                val date = cursor.getLong(cursor.getColumnIndexOrThrow(Telephony.Sms.DATE))
                 val contactName = getContactName(address)
                 
-                messages.add(SmsMessage(id, address, contactName, body, date))
+                messages.add(SmsMessage(id, address, contactName, body, date, isSent))
             }
-            smsAdapter.setMessages(messages)
-        } ?: run {
-            Toast.makeText(this, "No SMS messages found", Toast.LENGTH_SHORT).show()
         }
     }
 
