@@ -21,6 +21,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class ComposeActivity : AppCompatActivity() {
     private lateinit var recipientEditText: MaterialAutoCompleteTextView
@@ -124,7 +125,7 @@ class ComposeActivity : AppCompatActivity() {
             }
             
             val messageUri = contentResolver.insert(Telephony.Sms.CONTENT_URI, values)
-            val messageId = messageUri?.lastPathSegment?.toLongOrNull() ?: -1
+            val messageId = messageUri?.lastPathSegment?.toLongOrNull() ?: -1L
 
             // Create pending intents for delivery reports
             val deliveryIntent = Intent(DELIVERED_ACTION).apply {
@@ -154,6 +155,10 @@ class ComposeActivity : AppCompatActivity() {
                     null, deliveryPI
                 )
             }
+
+            // Notify about the new message
+            LocalBroadcastManager.getInstance(this)
+                .sendBroadcast(Intent(SmsReceiver.ACTION_SMS_RECEIVED))
 
             Toast.makeText(this, "Message sent", Toast.LENGTH_SHORT).show()
             finish()

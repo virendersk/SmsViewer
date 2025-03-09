@@ -8,6 +8,7 @@ import android.content.Intent
 import android.provider.Telephony
 import android.telephony.SmsManager
 import android.util.Log
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 
 class DeliveryReportReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -32,8 +33,9 @@ class DeliveryReportReceiver : BroadcastReceiver() {
             }
         }
 
-        // Notify MainActivity to refresh the message list
-        context.sendBroadcast(Intent(SmsReceiver.ACTION_SMS_RECEIVED))
+        // Notify MainActivity to refresh the message list using LocalBroadcastManager
+        LocalBroadcastManager.getInstance(context)
+            .sendBroadcast(Intent(SmsReceiver.ACTION_SMS_RECEIVED))
     }
 
     private fun updateMessageStatus(context: Context, messageId: Long, status: Int) {
