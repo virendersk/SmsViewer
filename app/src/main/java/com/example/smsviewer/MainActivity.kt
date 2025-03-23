@@ -22,11 +22,12 @@ import androidx.core.content.ContextCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import android.content.ContentValues
 import android.view.Menu
 import android.view.MenuItem
+import android.view.WindowManager
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -35,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var smsRecyclerView: RecyclerView
     private lateinit var searchEditText: TextInputEditText
-    private lateinit var composeFab: FloatingActionButton
+    private lateinit var composeFab: ExtendedFloatingActionButton
     private val smsAdapter = SmsAdapter { message ->
         if (!message.isSent && !message.isRead) {
             markMessageAsRead(message.id, message.isSent)
@@ -63,6 +64,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
+        // Set status bar color to match header
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        window.statusBarColor = getColor(R.color.purple_500)
 
         smsRecyclerView = findViewById(R.id.smsRecyclerView)
         searchEditText = findViewById(R.id.searchEditText)

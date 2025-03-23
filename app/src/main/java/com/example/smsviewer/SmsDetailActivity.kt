@@ -236,4 +236,9 @@ class SmsDetailActivity : AppCompatActivity() {
         val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.detail_menu, menu)
+        return true
+    }
 } 

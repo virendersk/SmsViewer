@@ -41,14 +41,16 @@
                     android:layout_width="16dp"
                     android:layout_height="16dp"
                     android:layout_marginEnd="8dp"
-                    android:visibility="gone"/>
+                    android:visibility="gone"
+                    android:tint="?android:attr/textColorSecondary"/>
 
                 <ImageView
                     android:id="@+id/deliveryStatusView"
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:scaleType="fitCenter"
-                    android:visibility="visible"/>
+                    android:visibility="visible"
+                    android:tint="?android:attr/textColorSecondary"/>
             </LinearLayout>
         </LinearLayout>
 
@@ -65,7 +67,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textSize="12sp"
-            android:textColor="@android:color/darker_gray"/>
+            android:textColor="?android:attr/textColorSecondary"/>
     </LinearLayout>
 
 </com.google.android.material.card.MaterialCardView> 
