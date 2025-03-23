@@ -19,7 +19,8 @@ data class SmsMessage(
     val date: Long,
     val isSent: Boolean = false,
     val deliveryStatus: Int = 0,
-    val deliveredDate: Long = 0
+    val deliveredDate: Long = 0,
+    val isRead: Boolean = false
 ) {
     val displayName: String
         get() = contactName ?: address
@@ -48,6 +49,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         val dateTextView: TextView = view.findViewById(R.id.dateTextView)
         val cardView: View = view.findViewById(R.id.messageCard)
         val deliveryStatusView: ImageView = view.findViewById(R.id.deliveryStatusView)
+        val readStatusView: ImageView = view.findViewById(R.id.readStatusView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SmsViewHolder {
@@ -66,6 +68,7 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         
         // Set default visibility to GONE
         holder.deliveryStatusView.visibility = View.GONE
+        holder.readStatusView.visibility = View.GONE
         
         // Style sent messages differently and show delivery status
         if (message.isSent) {
@@ -93,6 +96,13 @@ class SmsAdapter(private val onItemClick: (SmsMessage) -> Unit) : RecyclerView.A
         } else {
             holder.cardView.setBackgroundColor(ContextCompat.getColor(context, android.R.color.white))
             holder.senderTextView.setTextColor(ContextCompat.getColor(context, android.R.color.black))
+            
+            // Show read status for received messages
+            if (!message.isRead) {
+                holder.readStatusView.setImageResource(R.drawable.ic_unread)
+                holder.readStatusView.contentDescription = "Unread message"
+                holder.readStatusView.visibility = View.VISIBLE
+            }
         }
         
         holder.itemView.setOnClickListener {

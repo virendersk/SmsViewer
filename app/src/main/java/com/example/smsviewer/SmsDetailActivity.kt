@@ -2,14 +2,17 @@ package com.example.smsviewer
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.provider.Telephony
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import java.text.SimpleDateFormat
@@ -27,8 +30,10 @@ class SmsDetailActivity : AppCompatActivity() {
     private var isSent: Boolean = false
     private var deliveryStatus: Int = 0
     private var deliveredDate: Long = 0
+    private var messageId: Long = -1L
 
     companion object {
+        private const val TAG = "SmsViewer_Detail" // Unique tag for SmsDetailActivity logs
         private const val EXTRA_SMS_ID = "extra_sms_id"
         private const val EXTRA_SMS_ADDRESS = "extra_sms_address"
         private const val EXTRA_SMS_CONTACT_NAME = "extra_sms_contact_name"
@@ -52,9 +57,20 @@ class SmsDetailActivity : AppCompatActivity() {
         }
     }
 
+    private fun isDefaultSmsApp(): Boolean {
+        return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val roleManager = getSystemService(android.app.role.RoleManager::class.java)
+            roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_SMS)
+        } else {
+            Telephony.Sms.getDefaultSmsPackage(this) == packageName
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sms_detail)
+
+        android.util.Log.i(TAG, "📱 Opening SMS detail view")
 
         val toolbar: MaterialToolbar = findViewById(R.id.detailToolbar)
         setSupportActionBar(toolbar)
@@ -74,6 +90,38 @@ class SmsDetailActivity : AppCompatActivity() {
         isSent = intent.getBooleanExtra(EXTRA_SMS_IS_SENT, false)
         deliveryStatus = intent.getIntExtra(EXTRA_SMS_DELIVERY_STATUS, 0)
         deliveredDate = intent.getLongExtra(EXTRA_SMS_DELIVERED_DATE, 0L)
+        messageId = intent.getLongExtra(EXTRA_SMS_ID, -1L)
+
+        android.util.Log.i(TAG, "📨 Detail view: messageId=$messageId, isSent=$isSent, sender=$sender")
+
+        // Mark message as read if it's not sent and not already read
+        if (!isSent && messageId != -1L) {
+            if (!isDefaultSmsApp()) {
+                android.util.Log.e(TAG, "❌ Cannot mark message as read in detail view: not default SMS app")
+                Toast.makeText(this, "Cannot mark message as read: app is not default SMS app", Toast.LENGTH_LONG).show()
+            } else {
+                android.util.Log.i(TAG, "📝 Attempting to mark message $messageId as read in detail view (isSent: $isSent)")
+                val values = ContentValues().apply {
+                    put(Telephony.Sms.READ, 1)
+                }
+                
+                // Use the appropriate URI based on whether the message is sent or received
+                val uri = if (isSent) Telephony.Sms.Sent.CONTENT_URI else Telephony.Sms.Inbox.CONTENT_URI
+                
+                val result = contentResolver.update(
+                    uri,
+                    values,
+                    "${Telephony.Sms._ID} = ?",
+                    arrayOf(messageId.toString())
+                )
+                
+                android.util.Log.i(TAG, "📊 Update result in detail view for ${if (isSent) "Sent" else "Inbox"}: $result")
+                
+                // Notify MainActivity to refresh the list
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                    .sendBroadcast(Intent(SmsReceiver.ACTION_SMS_RECEIVED))
+            }
+        }
 
         // Set the appropriate label and title based on message type
         recipientLabelTextView.text = if (isSent) "To" else "From"
@@ -119,7 +167,58 @@ class SmsDetailActivity : AppCompatActivity() {
                 startActivity(ComposeActivity.createIntent(this, sender, contactName))
                 true
             }
+            R.id.action_delete -> {
+                showDeleteConfirmationDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        if (!isDefaultSmsApp()) {
+            Toast.makeText(this, "Cannot delete message: app is not default SMS app", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Delete Message")
+            .setMessage("Are you sure you want to delete this message?")
+            .setPositiveButton("Delete") { _, _ ->
+                deleteMessage()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteMessage() {
+        if (messageId == -1L) {
+            Toast.makeText(this, "Cannot delete message: invalid message ID", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            // Use the appropriate URI based on whether the message is sent or received
+            val uri = if (isSent) Telephony.Sms.Sent.CONTENT_URI else Telephony.Sms.Inbox.CONTENT_URI
+            
+            val result = contentResolver.delete(
+                uri,
+                "${Telephony.Sms._ID} = ?",
+                arrayOf(messageId.toString())
+            )
+
+            if (result > 0) {
+                Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show()
+                // Notify MainActivity to refresh the list
+                androidx.localbroadcastmanager.content.LocalBroadcastManager.getInstance(this)
+                    .sendBroadcast(Intent(SmsReceiver.ACTION_SMS_RECEIVED))
+                finish()
+            } else {
+                Toast.makeText(this, "Failed to delete message", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e(TAG, "Error deleting message", e)
+            Toast.makeText(this, "Error deleting message: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -134,7 +233,7 @@ class SmsDetailActivity : AppCompatActivity() {
     }
 
     private fun formatDate(timestamp: Long): String {
-        val sdf = SimpleDateFormat("MMMM dd, yyyy HH:mm:ss", Locale.getDefault())
+        val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
         return sdf.format(Date(timestamp))
     }
 } 
